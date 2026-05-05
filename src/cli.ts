@@ -66,8 +66,8 @@ function parseCliArgs(): CliArgs {
     process.exit(0)
   }
 
-  if (!values['project-id']) {
-    process.stderr.write('error: --project-id is required\n\n')
+  if (!values.project) {
+    process.stderr.write('error: --project is required\n\n')
     printUsage()
     process.exit(2)
   }
@@ -80,7 +80,7 @@ function parseCliArgs(): CliArgs {
   }
 
   return {
-    projectId: values['project'],
+    projectId: values.project,
     mode: modeRaw,
     // node:util parseArgs may resolve --display-name-filter="" to undefined
     // when explicitly empty; keep the explicit ?? to honor empty-string opt-out

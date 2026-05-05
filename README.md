@@ -34,18 +34,18 @@ Authentication uses Application Default Credentials. Run
 
 ```bash
 # Dump full key objects to stdout (logs go to stderr)
-./dist/cli.js --project-id my-firebase-project --mode dump
+./dist/cli.js --project my-firebase-project --mode dump
 
 # Write minimal JSON file for Terraform to ingest
-./dist/cli.js --project-id my-firebase-project --mode write \
+./dist/cli.js --project my-firebase-project --mode write \
   --output-path terraform/discovered_keys.json
 
 # Audit every key in the project (disable display-name filtering)
-./dist/cli.js --project-id my-firebase-project --mode dump \
+./dist/cli.js --project my-firebase-project --mode dump \
   --display-name-filter ""
 
 # Pipeable: write mode emits a JSON status line on stdout
-./dist/cli.js --project-id my-firebase-project --mode write --quiet \
+./dist/cli.js --project my-firebase-project --mode write --quiet \
   | jq -r 'if .changed then "PR-worthy" else "no diff" end'
 ```
 
@@ -55,7 +55,7 @@ Authentication uses Application Default Credentials. Run
 - uses: ./.github/actions/discover-firebase-keys
   id: discover
   with:
-    project-id: ${{ vars.GCP_PROJECT_ID }}
+    project: ${{ vars.GCP_PROJECT_ID }}
     mode: write
     output-path: terraform/discovered_keys.json
     # display-name-filter defaults to "auto created by Firebase"
