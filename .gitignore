@@ -1,7 +1,6 @@
-a.json
 build
 .claude/settings.local.json
-discovered_keys.json
+discovered/
 *.log
 .env
 .env.*
