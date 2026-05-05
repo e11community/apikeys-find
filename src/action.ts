@@ -8,8 +8,8 @@ const ghaLogger: Logger = {
 
 function readMode(): Mode {
   const raw = core.getInput('mode', { required: true }).toLowerCase()
-  if (raw !== 'dump' && raw !== 'write') {
-    throw new Error(`Invalid mode "${raw}". Expected "dump" or "write".`)
+  if (raw !== 'dump' && raw !== 'pretty' && raw !== 'write') {
+    throw new Error(`Invalid mode "${raw}". Expected "dump", "pretty", or "write".`)
   }
   return raw
 }
@@ -19,7 +19,7 @@ async function run(): Promise<void> {
 
   const result = await discover(
     {
-      projectId: core.getInput('project', { required: true }),
+      projectId: core.getInput('project_id', { required: true }),
       mode,
       outputPath: core.getInput('output-path') || 'discovered_keys.json',
       displayNameFilter: core.getInput('display-name-filter'),
@@ -30,9 +30,9 @@ async function run(): Promise<void> {
   core.setOutput('key-count', result.keyCount)
   core.setOutput('changed', String(result.changed))
 
-  // In dump mode, emit the full payload to the workflow log.
+  // In dump/pretty modes, emit the payload to the workflow log.
   // setOutput is unsuitable - multi-line / large values get awkward.
-  if (mode === 'dump') {
+  if (mode !== 'write') {
     process.stdout.write(result.dumpPayload)
   }
 }

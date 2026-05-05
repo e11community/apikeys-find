@@ -55,7 +55,7 @@ Authentication uses Application Default Credentials. Run
 - uses: ./.github/actions/discover-firebase-keys
   id: discover
   with:
-    project: ${{ vars.GCP_PROJECT_ID }}
+    project_id: ${{ vars.GCP_PROJECT_ID }}
     mode: write
     output-path: terraform/discovered_keys.json
     # display-name-filter defaults to "auto created by Firebase"

@@ -1,0 +1,86 @@
+name: Discover Firebase API Keys
+
+on:
+  schedule:
+    # Daily at 06:00 UTC. Pick a time when your team is not actively
+    # running terraform apply, so any resulting PR has time to be reviewed.
+    - cron: '0 6 * * *'
+
+  workflow_dispatch:
+    inputs:
+      project_id:
+        description: 'GCP project ID to scan'
+        required: true
+        type: string
+      mode:
+        description: 'dump (stdout only) or write (commit JSON)'
+        default: 'write'
+        type: choice
+        options:
+          - dump
+          - pretty
+          - write
+      output_path:
+        description: 'Path to JSON file (write mode only)'
+        required: false
+        default: 'terraform/discovered_keys.json'
+        type: string
+
+permissions:
+  contents: write # required for create-pull-request
+  pull-requests: write # required for create-pull-request
+  id-token: write # required for Workload Identity Federation
+
+jobs:
+  discover:
+    runs-on: ubuntu-latest
+    steps:
+      - id: checkout
+        name: Checkout
+        uses: actions/checkout@v4
+
+      - id: gcp_auth
+        name: GCP Auth
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ secrets.GCP_WIF_PROVIDER }}
+          service_account: ${{ secrets.GCP_DISCOVERY_SA }}
+
+      - id: discover
+        name: Discover Firebase API Keys
+        # uses: @e11community/apikeys-find@v1
+        uses: ./.github/actions/discover-firebase-keys
+        with:
+          # On scheduled runs, inputs.* are unset — fall back to the repo
+          # variable GCP_PROJECT_ID. On workflow_dispatch, the typed input wins.
+          project_id: ${{ inputs.project_id || vars.GCP_PROJECT_ID }}
+          mode: ${{ inputs.mode || 'write' }}
+          output-path: ${{ inputs.output_path || 'terraform/discovered_keys.json' }}
+          # display-name-filter omitted - defaults to "auto created by Firebase"
+
+      - name: Summarize
+        run: |
+          echo "Discovered ${{ steps.discover.outputs.key-count }} keys"
+          echo "Changed: ${{ steps.discover.outputs.changed }}"
+
+      - name: Open PR if JSON changed
+        if: steps.discover.outputs.changed == 'true'
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: 'chore: update discovered Firebase API keys'
+          title: 'chore: update discovered Firebase API keys'
+          body: |
+            Automated discovery found **${{ steps.discover.outputs.key-count }}** Firebase
+            auto-provisioned API keys in project `${{ inputs.project_id || vars.GCP_PROJECT_ID }}`.
+
+            Review the diff to confirm new keys are expected:
+            - **Expected**: a teammate added a new Firebase app of a platform
+              not previously used in this project.
+            - **Unexpected**: a key spawned without an obvious cause. Investigate
+              before merging — could be the matching/association edge case or
+              a Terraform-induced auto-provision.
+
+            Once merged, the next `terraform apply` will harden the new keys
+            with the standard Firebase API allowlist.
+          branch: chore/update-firebase-keys
+          delete-branch: true

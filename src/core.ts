@@ -1,8 +1,9 @@
 import { ApiKeysClient } from '@google-cloud/apikeys'
 import * as fs from 'node:fs/promises'
+import * as path from 'node:path'
 import * as crypto from 'node:crypto'
 
-export type Mode = 'dump' | 'write'
+export type Mode = 'dump' | 'pretty' | 'write'
 
 export interface MinimalKey {
   uid: string
@@ -45,7 +46,7 @@ async function listAllKeys(projectId: string): Promise<unknown[]> {
   const client = new ApiKeysClient()
   const parent = `projects/${projectId}/locations/global`
 
-  const iterable = client.listKeysAsync({ parent })
+  const iterable = client.listKeysAsync({ parent }, { autoPaginate: false })
   const keys: unknown[] = []
   for await (const key of iterable) {
     keys.push(key)
@@ -59,6 +60,36 @@ function filterByDisplayName(keys: unknown[], filter: string): unknown[] {
     const dn = (k as { displayName?: string | null }).displayName ?? ''
     return dn.includes(filter)
   })
+}
+
+interface PrettyKey {
+  uid: string | null
+  displayName: string | null
+  apis: Array<string | null>
+}
+
+function projectPretty(key: unknown): PrettyKey {
+  const k = key as {
+    uid?: string | null
+    displayName?: string | null
+    restrictions?: { apiTargets?: Array<{ service?: string | null }> | null } | null
+  }
+  const apis = (k.restrictions?.apiTargets ?? [])
+    .map((t) => t?.service ?? null)
+    .sort((a, b) => {
+      if (a === null) return 1
+      if (b === null) return -1
+      return a.localeCompare(b)
+    })
+  return {
+    uid: k.uid ?? null,
+    displayName: k.displayName ?? null,
+    apis,
+  }
+}
+
+function prettyStream(keys: unknown[]): string {
+  return keys.map((k) => JSON.stringify(projectPretty(k), null, 2)).join('\n') + '\n'
 }
 
 function toMinimal(keys: unknown[]): MinimalKey[] {
@@ -107,13 +138,15 @@ export async function discover(
   }
 
   const minimal = toMinimal(filtered)
-  const dumpPayload = JSON.stringify(filtered, null, 2) + '\n'
+  const dumpPayload =
+    options.mode === 'pretty' ? prettyStream(filtered) : JSON.stringify(filtered, null, 2) + '\n'
   const writePayload = JSON.stringify(minimal, null, 2) + '\n'
 
   let changed = false
   if (options.mode === 'write') {
     changed = await fileContentDiffers(options.outputPath, writePayload)
     if (changed) {
+      await fs.mkdir(path.dirname(options.outputPath), { recursive: true })
       await fs.writeFile(options.outputPath, writePayload, 'utf8')
       logger.info(`Wrote ${minimal.length} keys to ${options.outputPath}`)
     } else {

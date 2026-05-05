@@ -10,14 +10,16 @@ const stderrLogger: Logger = {
 
 function printUsage(): void {
   process.stderr.write(
-    `Usage: discover-firebase-keys --project <id> --mode <dump|write> [options]
+    `Usage: discover-firebase-keys --project <id> --mode <dump|pretty|write> [options]
 
 Required:
   --project <id>              GCP project ID
 
-  --mode <dump|write>         Operation mode:
-                                dump  - print full key objects to stdout
-                                write - update minimal JSON file for Terraform
+  --mode <dump|pretty|write>  Operation mode:
+                                dump   - print full key objects to stdout
+                                pretty - print {uid, displayName, apis} per
+                                         key to stdout (jq-style stream)
+                                write  - update minimal JSON file for Terraform
 
 Optional:
   --output-path <path>        Path to write JSON in write mode
@@ -73,8 +75,10 @@ function parseCliArgs(): CliArgs {
   }
 
   const modeRaw = (values.mode ?? '').toLowerCase()
-  if (modeRaw !== 'dump' && modeRaw !== 'write') {
-    process.stderr.write(`error: --mode must be "dump" or "write" (got "${values.mode}")\n\n`)
+  if (modeRaw !== 'dump' && modeRaw !== 'pretty' && modeRaw !== 'write') {
+    process.stderr.write(
+      `error: --mode must be "dump", "pretty", or "write" (got "${values.mode}")\n\n`,
+    )
     printUsage()
     process.exit(2)
   }
@@ -104,9 +108,7 @@ async function run(): Promise<void> {
     logger,
   )
 
-  if (args.mode === 'dump') {
-    process.stdout.write(result.dumpPayload)
-  } else {
+  if (args.mode === 'write') {
     // In write mode, emit a small JSON status line on stdout so callers
     // (humans, scripts) can pipe it. All progress/log output goes to stderr.
     process.stdout.write(
@@ -116,6 +118,8 @@ async function run(): Promise<void> {
         outputPath: args.outputPath,
       }) + '\n',
     )
+  } else {
+    process.stdout.write(result.dumpPayload)
   }
 }
 

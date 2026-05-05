@@ -3,11 +3,11 @@ description: 'Enumerates Firebase auto-provisioned API keys in a GCP project'
 author: 'The Authors'
 
 inputs:
-  project:
+  project_id:
     description: 'GCP project ID to scan'
     required: true
   mode:
-    description: 'Operation mode: "dump" (full keys to stdout) or "write" (minimal JSON for Terraform)'
+    description: 'Operation mode: "dump" (full keys to stdout), "pretty" (jq-style {uid,displayName,apis} stream to stdout), or "write" (minimal JSON for Terraform)'
     required: true
   output-path:
     description: 'Path to write the minimal JSON file (only used when mode=write)'
