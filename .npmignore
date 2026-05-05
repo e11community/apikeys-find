@@ -1,0 +1,10 @@
+.claude
+.dockerignore
+docs
+.editorconfig
+.git
+.gitignore
+.github
+jest*
+node_modules
+.prettier*

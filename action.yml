@@ -1,0 +1,29 @@
+name: 'Find API Keys'
+description: 'Enumerates Firebase auto-provisioned API keys in a GCP project'
+author: 'The Authors'
+
+inputs:
+  project:
+    description: 'GCP project ID to scan'
+    required: true
+  mode:
+    description: 'Operation mode: "dump" (full keys to stdout) or "write" (minimal JSON for Terraform)'
+    required: true
+  output-path:
+    description: 'Path to write the minimal JSON file (only used when mode=write)'
+    required: false
+    default: 'discovered_keys.json'
+  display-name-filter:
+    description: 'Substring match against displayName. Empty string disables filtering.'
+    required: false
+    default: 'auto created by Firebase'
+
+outputs:
+  key-count:
+    description: 'Number of keys discovered (after filtering)'
+  changed:
+    description: 'true if mode=write and the output file content changed'
+
+runs:
+  using: 'node20'
+  main: 'dist/action.js'
