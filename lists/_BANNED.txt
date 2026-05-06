@@ -1,0 +1,8 @@
+aiplatform.googleapis.com
+apigateway.googleapis.com
+cloudaicompanion.googleapis.com
+cloudbuild.googleapis.com
+generativelanguage.googleapis.com
+oslogin.googleapis.com
+pubsub.googleapis.com
+sqladmin.googleapis.com

@@ -1,0 +1,2 @@
+firebaseml.googleapis.com
+firebasevertexai.googleapis.com
