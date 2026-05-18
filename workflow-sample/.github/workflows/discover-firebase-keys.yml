@@ -23,7 +23,7 @@ on:
       output_path:
         description: 'Path to JSON file (write mode only)'
         required: false
-        default: 'terraform/discovered_keys.json'
+        default: 'discovered/discovered_keys.json'
         type: string
 
 permissions:
